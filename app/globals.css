@@ -6,41 +6,72 @@
 }
 
 /* ── Base styles ────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  /* prevent font scaling on rotate */
+}
+
 body {
-  background: #f9fafb;   /* gray-50 */
-  color: #111827;         /* gray-900 */
+  background: #f9fafb;
+  color: #111827;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* safe area insets for notched phones */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* ── Smooth page transitions ────────────────────────── */
+/* ── Smooth page fade-in ────────────────────────────── */
 main {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.25s ease-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-/* ── Custom scrollbar (Webkit) ──────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
+/* ── Tap highlight removal (feels native on mobile) ─── */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+/* ── Smooth button press feel ───────────────────────── */
+button,
+a {
+  touch-action: manipulation;
+  /* no 300ms tap delay */
 }
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 999px;
+
+/* ── Custom scrollbar (desktop only) ───────────────── */
+@media (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+
+/* ── Input focus ring (mobile-safe) ────────────────── */
+input:focus-visible {
+  outline: none;
 }
