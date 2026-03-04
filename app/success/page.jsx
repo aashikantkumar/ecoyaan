@@ -4,16 +4,10 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 
-/**
- * Success Page
- * On first mount, calls placeOrder() to save the order to history and clear the cart.
- * Displays the confirmed order details.
- */
 export default function SuccessPage() {
     const router = useRouter();
     const { cartItems, shippingFee, shippingAddress, placeOrder, orderHistory } = useCart();
 
-    // Use a ref to ensure placeOrder() is only called once (Strict Mode safe)
     const orderPlaced = useRef(false);
     const placedOrderRef = useRef(null);
 
@@ -24,69 +18,61 @@ export default function SuccessPage() {
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Show the just-placed order if available, otherwise the most recent from history
     const order = placedOrderRef.current || orderHistory[0];
 
     if (!order) {
         return (
-            <div className="max-w-2xl mx-auto px-4 pb-12 text-center">
+            <div className="max-w-2xl mx-auto px-3 sm:px-4 pb-12 text-center">
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10">
                     <p className="text-gray-500 mb-4">No order found. Please complete checkout first.</p>
-                    <button
-                        onClick={() => router.push("/")}
-                        className="text-green-600 hover:text-green-700 font-medium underline cursor-pointer"
-                    >
-                        Browse Products
-                    </button>
+                    <button onClick={() => router.push("/")}
+                        className="text-green-600 font-medium underline cursor-pointer">Browse Products</button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-2xl mx-auto px-4 pb-12">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 md:p-12 text-center">
-                {/* Animated green checkmark */}
-                <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
-                    <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 pb-12">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-12 text-center">
+                {/* Animated checkmark */}
+                <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mb-5 animate-bounce">
+                    <svg className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                 </div>
 
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Successful! 🎉</h1>
-                <p className="text-gray-500 mb-8">Thank you for choosing eco-friendly products!</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Order Successful! 🎉</h1>
+                <p className="text-gray-500 mb-6 sm:mb-8 text-sm sm:text-base">
+                    Thank you for choosing eco-friendly products!
+                </p>
 
-                {/* Order details card */}
-                <div className="bg-gray-50 rounded-xl p-6 text-left mb-8 space-y-4">
+                {/* Order details */}
+                <div className="bg-gray-50 rounded-xl p-4 sm:p-6 text-left mb-6 sm:mb-8 space-y-4">
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Order ID</span>
-                        <span className="font-mono font-semibold text-gray-800">{order.orderId}</span>
+                        <span className="font-mono font-semibold text-gray-800 text-xs sm:text-sm">{order.orderId}</span>
                     </div>
-
                     <div className="border-t border-gray-200 pt-3 space-y-2">
                         {order.items.map((item) => (
                             <div key={item.product_id} className="flex justify-between text-sm text-gray-600">
-                                <span>{item.product_name} × {item.quantity}</span>
-                                <span>₹{(item.product_price * item.quantity).toLocaleString("en-IN")}</span>
+                                <span className="pr-2 truncate">{item.product_name} × {item.quantity}</span>
+                                <span className="flex-shrink-0">₹{(item.product_price * item.quantity).toLocaleString("en-IN")}</span>
                             </div>
                         ))}
                     </div>
-
                     <div className="border-t border-gray-200 pt-3 space-y-1">
                         <div className="flex justify-between text-sm text-gray-600">
-                            <span>Subtotal</span>
-                            <span>₹{order.subtotal.toLocaleString("en-IN")}</span>
+                            <span>Subtotal</span><span>₹{order.subtotal.toLocaleString("en-IN")}</span>
                         </div>
                         <div className="flex justify-between text-sm text-gray-600">
-                            <span>Shipping</span>
-                            <span>₹{order.shippingFee}</span>
+                            <span>Shipping</span><span>₹{order.shippingFee}</span>
                         </div>
                         <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200">
                             <span>Total Paid</span>
                             <span className="text-green-700">₹{order.grandTotal.toLocaleString("en-IN")}</span>
                         </div>
                     </div>
-
                     {order.shippingAddress && (
                         <div className="border-t border-gray-200 pt-3">
                             <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Delivering to</p>
@@ -98,22 +84,19 @@ export default function SuccessPage() {
                     )}
                 </div>
 
-                {/* Action buttons */}
+                {/* Action buttons — stack on mobile */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <button
-                        onClick={() => router.push("/orders")}
-                        className="border-2 border-green-600 text-green-700 hover:bg-green-50 font-semibold
-                       px-6 py-3 rounded-xl transition-all duration-200 active:scale-[0.98] cursor-pointer"
-                    >
+                    <button onClick={() => router.push("/orders")}
+                        className="border-2 border-green-600 text-green-700 active:bg-green-50 font-semibold
+                       px-6 py-3.5 rounded-xl transition-all duration-150 active:scale-[0.98]
+                       cursor-pointer min-h-[52px]">
                         📦 View Order History
                     </button>
-                    <button
-                        onClick={() => router.push("/")}
-                        className="bg-green-600 hover:bg-green-700 text-white font-semibold
-                       px-6 py-3 rounded-xl transition-all duration-200
-                       shadow-lg shadow-green-600/25 hover:shadow-green-700/30
-                       active:scale-[0.98] cursor-pointer"
-                    >
+                    <button onClick={() => router.push("/")}
+                        className="bg-green-600 active:bg-green-700 text-white font-semibold
+                       px-6 py-3.5 rounded-xl transition-all duration-150
+                       shadow-lg shadow-green-600/25 active:scale-[0.98]
+                       cursor-pointer min-h-[52px]">
                         ← Shop More
                     </button>
                 </div>
