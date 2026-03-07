@@ -3,105 +3,131 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { LiquidButton } from "@/components/ui/liquid-glass-button";
 
-/**
- * Shipping Address Page
- * Collects shipping info with full validation, saves to context, navigates to payment.
- */
+const EMPTY_FORM = {
+    fullName: "",
+    email: "",
+    phone: "",
+    pinCode: "",
+    city: "",
+    state: "",
+};
+
 export default function ShippingPage() {
     const router = useRouter();
-    const { setShippingAddress } = useCart();
+    const {
+        shippingAddresses,
+        shippingAddress,
+        addShippingAddress,
+        selectShippingAddress,
+    } = useCart();
 
-    const [form, setForm] = useState({
-        fullName: "",
-        email: "",
-        phone: "",
-        pinCode: "",
-        city: "",
-        state: "",
-    });
+    const [form, setForm] = useState(EMPTY_FORM);
 
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
+    const [notice, setNotice] = useState("");
 
-    /** Update a single form field */
+    const isFormEmpty = Object.values(form).every((value) => !value.trim());
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
-        // Clear error on change
+        setNotice("");
         if (errors[name]) {
             setErrors((prev) => ({ ...prev, [name]: "" }));
         }
     };
 
-    /** Mark a field as touched on blur */
     const handleBlur = (e) => {
         const { name } = e.target;
         setTouched((prev) => ({ ...prev, [name]: true }));
-        validateField(name, form[name]);
+        const error = getFieldError(name, form[name]);
+        setErrors((prev) => ({ ...prev, [name]: error }));
     };
 
-    /** Validate a single field */
-    const validateField = (name, value) => {
-        let error = "";
-
+    const getFieldError = (name, value) => {
         if (!value.trim()) {
-            error = "This field is required";
-        } else {
-            switch (name) {
-                case "email":
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                        error = "Please enter a valid email address";
-                    }
-                    break;
-                case "phone":
-                    if (!/^\d{10}$/.test(value)) {
-                        error = "Phone number must be exactly 10 digits";
-                    }
-                    break;
-                case "pinCode":
-                    if (!/^\d{6}$/.test(value)) {
-                        error = "PIN code must be exactly 6 digits";
-                    }
-                    break;
-            }
+            return "This field is required";
         }
 
-        setErrors((prev) => ({ ...prev, [name]: error }));
-        return error;
+        switch (name) {
+            case "email":
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    return "Please enter a valid email address";
+                }
+                break;
+            case "phone":
+                if (!/^\d{10}$/.test(value)) {
+                    return "Phone number must be exactly 10 digits";
+                }
+                break;
+            case "pinCode":
+                if (!/^\d{6}$/.test(value)) {
+                    return "PIN code must be exactly 6 digits";
+                }
+                break;
+        }
+
+        return "";
     };
 
-    /** Validate all fields and submit */
+    const validateAll = () => {
+        const allTouched = {};
+        const nextErrors = {};
+        let hasError = false;
+
+        Object.entries(form).forEach(([key, value]) => {
+            allTouched[key] = true;
+            const error = getFieldError(key, value);
+            if (error) {
+                hasError = true;
+            }
+            nextErrors[key] = error;
+        });
+
+        setTouched(allTouched);
+        setErrors(nextErrors);
+        return hasError;
+    };
+
+    const handleSelectAddress = (addressId) => {
+        selectShippingAddress(addressId);
+        setForm(EMPTY_FORM);
+        setErrors({});
+        setTouched({});
+        setNotice("Using selected address for delivery.");
+    };
+
+    const handleSaveAddress = () => {
+        if (isFormEmpty) {
+            setNotice("Fill the form to save a new address.");
+            return;
+        }
+        if (validateAll()) return;
+
+        addShippingAddress(form, { select: true });
+        setNotice("Address saved. You can add another or continue.");
+        setForm(EMPTY_FORM);
+        setErrors({});
+        setTouched({});
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Mark all fields as touched
-        const allTouched = {};
-        Object.keys(form).forEach((key) => (allTouched[key] = true));
-        setTouched(allTouched);
-
-        // Validate every field
-        const newErrors = {};
-        let hasError = false;
-        Object.entries(form).forEach(([key, value]) => {
-            const error = validateField(key, value);
-            if (error) {
-                newErrors[key] = error;
-                hasError = true;
-            }
-        });
-
-        if (hasError) {
-            setErrors(newErrors);
+        if (isFormEmpty && shippingAddress) {
+            router.push("/payment");
             return;
         }
 
-        // Save to context and navigate
-        setShippingAddress(form);
+        if (validateAll()) return;
+
+        addShippingAddress(form, { select: true });
         router.push("/payment");
     };
 
-    /** Renders a single form field with label, input, and error message */
     const renderField = (label, name, type = "text", placeholder = "", maxLength) => (
         <div>
             <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -121,7 +147,7 @@ export default function ShippingPage() {
                     focus:outline-none focus:ring-2
                     ${touched[name] && errors[name]
                         ? "border-red-300 focus:ring-red-200 bg-red-50/50"
-                        : "border-gray-200 focus:ring-green-200 focus:border-green-400 bg-white"
+                        : "border-gray-200 focus:ring-slate-200 focus:border-slate-400 bg-white"
                     }
                 `}
             />
@@ -141,40 +167,137 @@ export default function ShippingPage() {
     );
 
     return (
-        <div className="max-w-2xl mx-auto px-4 pb-12">
-            {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Shipping Address</h1>
-                <p className="text-gray-500 mt-1">Where should we deliver your order?</p>
+        <div className="max-w-2xl mx-auto px-4 pb-28 sm:pb-12">
+            <div className="mb-6 sm:mb-8">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:text-center">
+                    Step 3 of 5
+                </p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 sm:text-center">
+                    Shipping Address
+                </h1>
+                <p className="text-gray-500 mt-1 text-sm sm:text-base sm:text-center">Where should we deliver your order?</p>
             </div>
 
+            {shippingAddresses.length > 0 && (
+                <section className="mb-5 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                    <div className="mb-3 flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-slate-800">Saved Addresses</h2>
+                        <span className="text-xs text-slate-500">{shippingAddresses.length} saved</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {shippingAddresses.map((address) => {
+                            const isSelected = shippingAddress?.id === address.id;
+                            return (
+                                <button
+                                    key={address.id}
+                                    type="button"
+                                    onClick={() => handleSelectAddress(address.id)}
+                                    className={`rounded-xl border p-3 text-left transition ${isSelected
+                                            ? "border-slate-900 bg-slate-50"
+                                            : "border-slate-200 bg-white hover:border-slate-300"
+                                        }`}
+                                >
+                                    <p className="text-sm font-semibold text-slate-800">{address.fullName}</p>
+                                    <p className="mt-1 text-xs text-slate-600">{address.phone}</p>
+                                    <p className="text-xs text-slate-600">
+                                        {address.city}, {address.state} — {address.pinCode}
+                                    </p>
+                                    {isSelected && (
+                                        <p className="mt-1 text-[11px] font-semibold text-slate-800">Selected for delivery</p>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </section>
+            )}
+
             <form
+                id="shipping-form"
                 onSubmit={handleSubmit}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-8 space-y-5"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 md:p-8 space-y-6"
             >
-                {renderField("Full Name", "fullName", "text", "e.g. Priya Sharma")}
+                <section className="space-y-4">
+                    <h2 className="text-sm font-semibold text-slate-800">Contact Details</h2>
+                    {renderField("Full Name", "fullName", "text", "e.g. Priya Sharma")}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {renderField("Email", "email", "email", "you@example.com")}
-                    {renderField("Phone Number", "phone", "tel", "9876543210", 10)}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                        {renderField("Email", "email", "email", "you@example.com")}
+                        {renderField("Phone Number", "phone", "tel", "9876543210", 10)}
+                    </div>
+                </section>
+
+                <section className="space-y-4">
+                    <h2 className="text-sm font-semibold text-slate-800">Delivery Location</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                        {renderField("PIN Code", "pinCode", "text", "560001", 6)}
+                        {renderField("City", "city", "text", "Bengaluru")}
+                        {renderField("State", "state", "text", "Karnataka")}
+                    </div>
+                </section>
+
+                {notice && (
+                    <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">{notice}</p>
+                )}
+
+                <div className="hidden sm:flex items-center gap-3">
+                    <LiquidButton
+                        type="button"
+                        onClick={() => router.push("/cart")}
+                        variant="secondary"
+                        size="xl"
+                        className="min-h-[52px] flex-1"
+                    >
+                        ← Back
+                    </LiquidButton>
+                    <LiquidButton
+                        type="button"
+                        onClick={handleSaveAddress}
+                        variant="secondary"
+                        size="xl"
+                        className="min-h-[52px] flex-1"
+                    >
+                        Save Address
+                    </LiquidButton>
+                    <LiquidButton
+                        type="submit"
+                        variant="primary"
+                        size="xl"
+                        className="min-h-[52px] flex-1"
+                    >
+                        Next Step →
+                    </LiquidButton>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    {renderField("PIN Code", "pinCode", "text", "560001", 6)}
-                    {renderField("City", "city", "text", "Bengaluru")}
-                    {renderField("State", "state", "text", "Karnataka")}
-                </div>
-
-                <button
-                    type="submit"
-                    className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold
-                     py-3.5 rounded-xl transition-all duration-200
-                     shadow-lg shadow-green-600/25 hover:shadow-green-700/30
-                     active:scale-[0.98] cursor-pointer"
-                >
-                    Continue to Payment →
-                </button>
             </form>
+
+            <div
+                className="fixed bottom-0 left-0 right-0 border-t border-slate-200/80 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-lg sm:hidden z-40 p-3"
+                style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+            >
+                <div className="mb-2 px-1 text-xs text-slate-500">
+                    {shippingAddress ? `Selected: ${shippingAddress.fullName}` : "Select a saved address or add a new one"}
+                </div>
+                <div className="flex items-center gap-2">
+                    <LiquidButton
+                        type="button"
+                        onClick={() => router.push("/cart")}
+                        variant="secondary"
+                        size="xl"
+                        className="min-h-[52px] flex-1"
+                    >
+                        ← Back
+                    </LiquidButton>
+                    <LiquidButton
+                        type="submit"
+                        form="shipping-form"
+                        variant="primary"
+                        size="xl"
+                        className="min-h-[52px] flex-[1.35]"
+                    >
+                        Next Step →
+                    </LiquidButton>
+                </div>
+            </div>
         </div>
     );
 }

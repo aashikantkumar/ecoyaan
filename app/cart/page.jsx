@@ -4,10 +4,13 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import OrderSummary from "@/components/OrderSummary";
+import { LiquidButton } from "@/components/ui/liquid-glass-button";
 
 export default function CartPage() {
     const router = useRouter();
     const { cartItems, shippingFee, addToCart, removeFromCart, cartCount } = useCart();
+    const subtotal = cartItems.reduce((sum, item) => sum + item.product_price * item.quantity, 0);
+    const grandTotal = subtotal + shippingFee;
 
     if (cartCount === 0) {
         return (
@@ -21,22 +24,35 @@ export default function CartPage() {
                     </div>
                     <h2 className="text-xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
                     <p className="text-gray-500 mb-6 text-sm">Add some eco-friendly products first!</p>
-                    <button
+                    <LiquidButton
                         onClick={() => router.push("/")}
-                        className="text-green-600 font-semibold underline cursor-pointer active:opacity-60"
+                        variant="link"
+                        size="sm"
+                        className="font-semibold"
                     >
                         ← Browse Products
-                    </button>
+                    </LiquidButton>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 pb-32 sm:pb-12">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 pb-36 sm:pb-12">
             <div className="text-center mb-6 sm:mb-8">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Your Cart</h1>
                 <p className="text-gray-500 mt-1 text-sm sm:text-base">Review your eco-friendly picks</p>
+            </div>
+            <div className="sm:hidden mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+                <div className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
+                    {cartCount} {cartCount === 1 ? "item" : "items"}
+                </div>
+                <div className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                    Shipping ₹{shippingFee}
+                </div>
+                <div className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                    Total ₹{grandTotal.toLocaleString("en-IN")}
+                </div>
             </div>
 
             {/* Stack on mobile, side-by-side on desktop */}
@@ -46,7 +62,7 @@ export default function CartPage() {
                     {cartItems.map((item) => (
                         <div key={item.product_id}
                             className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 sm:p-5
-                         flex gap-3 sm:gap-5 items-center">
+                         flex gap-3 sm:gap-5 items-start">
                             <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50">
                                 <Image
                                     src={item.image}
@@ -63,24 +79,26 @@ export default function CartPage() {
                                 </h3>
                                 <p className="text-xs text-gray-400 mt-0.5">₹{item.product_price} each</p>
                                 {/* Quantity controls */}
-                                <div className="flex items-center gap-2 mt-2">
-                                    <button
+                                <div className="mt-2 flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2">
+                                    <LiquidButton
                                         onClick={() => removeFromCart(item.product_id)}
-                                        className="w-8 h-8 rounded-lg bg-gray-100 active:bg-red-100 text-gray-600 active:text-red-600
-                               flex items-center justify-center text-base font-bold transition-colors cursor-pointer"
-                                    >−</button>
+                                        variant="secondary"
+                                        size="icon"
+                                        className="h-8 w-8 text-base font-bold text-gray-600 hover:bg-red-50 hover:text-red-600 active:bg-red-100"
+                                    >−</LiquidButton>
                                     <span className="text-sm font-semibold w-6 text-center">{item.quantity}</span>
-                                    <button
+                                    <LiquidButton
                                         onClick={() => addToCart(item)}
-                                        className="w-8 h-8 rounded-lg bg-gray-100 active:bg-green-100 text-gray-600 active:text-green-600
-                               flex items-center justify-center text-base font-bold transition-colors cursor-pointer"
-                                    >+</button>
+                                        variant="secondary"
+                                        size="icon"
+                                        className="h-8 w-8 text-base font-bold text-gray-600 hover:bg-gray-200 active:bg-gray-300"
+                                    >+</LiquidButton>
+                                    </div>
+                                    <p className="font-bold text-slate-900 text-base sm:text-lg">
+                                        ₹{(item.product_price * item.quantity).toLocaleString("en-IN")}
+                                    </p>
                                 </div>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                                <p className="font-bold text-green-700 text-base sm:text-lg">
-                                    ₹{(item.product_price * item.quantity).toLocaleString("en-IN")}
-                                </p>
                             </div>
                         </div>
                     ))}
@@ -89,34 +107,54 @@ export default function CartPage() {
                 {/* Order summary — on desktop */}
                 <div className="lg:col-span-2 space-y-4 hidden lg:block">
                     <OrderSummary cartItems={cartItems} shippingFee={shippingFee} />
-                    <button
-                        onClick={() => router.push("/shipping")}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold
-                       py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-green-600/25
-                       active:scale-[0.98] cursor-pointer"
-                    >
-                        Proceed to Checkout →
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                        <LiquidButton
+                            onClick={() => router.push("/")}
+                            variant="secondary"
+                            size="xl"
+                            className="min-h-[52px]"
+                        >
+                            ← Back
+                        </LiquidButton>
+                        <LiquidButton
+                            onClick={() => router.push("/shipping")}
+                            variant="primary"
+                            size="xl"
+                            className="min-h-[52px]"
+                        >
+                            Next Step →
+                        </LiquidButton>
+                    </div>
                 </div>
             </div>
 
             {/* Sticky bottom bar on mobile */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg lg:hidden z-40 p-3"
+            <div className="fixed bottom-0 left-0 right-0 border-t border-slate-200/80 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-lg lg:hidden z-40 p-3"
                 style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
                 <div className="flex items-center justify-between mb-3 px-1">
                     <span className="text-sm text-gray-500">Grand Total</span>
-                    <span className="font-bold text-green-700 text-lg">
-                        ₹{(cartItems.reduce((s, i) => s + i.product_price * i.quantity, 0) + shippingFee).toLocaleString("en-IN")}
+                    <span className="font-bold text-slate-900 text-lg">
+                        ₹{grandTotal.toLocaleString("en-IN")}
                     </span>
                 </div>
-                <button
-                    onClick={() => router.push("/shipping")}
-                    className="w-full bg-green-600 active:bg-green-700 text-white font-semibold
-                     py-3.5 rounded-xl transition-all duration-150 active:scale-[0.98]
-                     cursor-pointer min-h-[52px]"
-                >
-                    Proceed to Checkout →
-                </button>
+                <div className="flex items-center gap-2">
+                    <LiquidButton
+                        onClick={() => router.push("/")}
+                        variant="secondary"
+                        size="xl"
+                        className="min-h-[52px] flex-1"
+                    >
+                        ← Back
+                    </LiquidButton>
+                    <LiquidButton
+                        onClick={() => router.push("/shipping")}
+                        variant="primary"
+                        size="xl"
+                        className="min-h-[52px] flex-[1.35]"
+                    >
+                        Next Step →
+                    </LiquidButton>
+                </div>
             </div>
         </div>
     );

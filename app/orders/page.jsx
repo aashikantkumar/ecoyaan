@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { LiquidButton } from "@/components/ui/liquid-glass-button";
 
 export default function OrdersPage() {
     const router = useRouter();
@@ -24,12 +25,12 @@ export default function OrdersPage() {
                     </div>
                     <h2 className="text-lg font-semibold text-gray-800 mb-2">No orders yet</h2>
                     <p className="text-gray-500 mb-6 text-sm">Your completed orders will appear here.</p>
-                    <button onClick={() => router.push("/")}
-                        className="bg-green-600 active:bg-green-700 text-white font-semibold
-                       px-6 py-3 rounded-xl transition-all duration-150 shadow-lg shadow-green-600/25
-                       cursor-pointer min-h-[48px]">
+                    <LiquidButton onClick={() => router.push("/")}
+                        variant="primary"
+                        size="xl"
+                        className="min-h-[48px]">
                         Start Shopping
-                    </button>
+                    </LiquidButton>
                 </div>
             ) : (
                 <div className="space-y-4 sm:space-y-5">
@@ -84,10 +85,12 @@ export default function OrdersPage() {
                     ))}
 
                     <div className="text-center pt-2">
-                        <button onClick={() => router.push("/")}
-                            className="text-green-600 active:text-green-700 font-semibold underline cursor-pointer text-sm min-h-[44px]">
+                        <LiquidButton onClick={() => router.push("/")}
+                            variant="link"
+                            size="sm"
+                            className="min-h-[44px] font-semibold">
                             ← Continue Shopping
-                        </button>
+                        </LiquidButton>
                     </div>
                 </div>
             )}

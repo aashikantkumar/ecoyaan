@@ -1,32 +1,27 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { LiquidButton } from "@/components/ui/liquid-glass-button";
 
 export default function SuccessPage() {
     const router = useRouter();
-    const { cartItems, shippingFee, shippingAddress, placeOrder, orderHistory } = useCart();
-
-    const orderPlaced = useRef(false);
-    const placedOrderRef = useRef(null);
-
-    useEffect(() => {
-        if (!orderPlaced.current && cartItems.length > 0 && shippingAddress) {
-            orderPlaced.current = true;
-            placedOrderRef.current = placeOrder(cartItems, shippingAddress, shippingFee);
-        }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const order = placedOrderRef.current || orderHistory[0];
+    const { orderHistory } = useCart();
+    const order = orderHistory[0];
 
     if (!order) {
         return (
             <div className="max-w-2xl mx-auto px-3 sm:px-4 pb-12 text-center">
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10">
                     <p className="text-gray-500 mb-4">No order found. Please complete checkout first.</p>
-                    <button onClick={() => router.push("/")}
-                        className="text-green-600 font-medium underline cursor-pointer">Browse Products</button>
+                    <LiquidButton
+                        onClick={() => router.push("/")}
+                        variant="link"
+                        size="sm"
+                        className="font-medium"
+                    >
+                        Browse Products
+                    </LiquidButton>
                 </div>
             </div>
         );
@@ -86,19 +81,18 @@ export default function SuccessPage() {
 
                 {/* Action buttons — stack on mobile */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <button onClick={() => router.push("/orders")}
-                        className="border-2 border-green-600 text-green-700 active:bg-green-50 font-semibold
-                       px-6 py-3.5 rounded-xl transition-all duration-150 active:scale-[0.98]
-                       cursor-pointer min-h-[52px]">
+                    <LiquidButton onClick={() => router.push("/orders")}
+                        variant="secondary"
+                        size="xl"
+                        className="min-h-[52px]">
                         📦 View Order History
-                    </button>
-                    <button onClick={() => router.push("/")}
-                        className="bg-green-600 active:bg-green-700 text-white font-semibold
-                       px-6 py-3.5 rounded-xl transition-all duration-150
-                       shadow-lg shadow-green-600/25 active:scale-[0.98]
-                       cursor-pointer min-h-[52px]">
+                    </LiquidButton>
+                    <LiquidButton onClick={() => router.push("/")}
+                        variant="primary"
+                        size="xl"
+                        className="min-h-[52px]">
                         ← Shop More
-                    </button>
+                    </LiquidButton>
                 </div>
             </div>
         </div>
